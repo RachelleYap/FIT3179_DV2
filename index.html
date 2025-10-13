@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Economic Inequality and Living Standards Across Malaysian States (2022)</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap');
+
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+      margin: 20px; 
+      background-color: #FFF9E6;
+    }
+    .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(540px, 1fr)); gap: 32px; max-width: 1200px; margin: 0 auto; justify-items: center; }
+    .container-wide { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 72px; max-width: 1200px; margin: 0 auto; align-items: start; justify-items: center; }
+    .vis-section { max-width: 520px; margin: 0 auto; width: 100%; text-align: center; }
+    .vis-section > div[id^="vis-"] { margin: 0 auto; }
+    .vis-section h3 { margin-bottom: 12px; }
+    #vis-income, #vis-poverty, #vis-scatter, #vis-bar, #vis-parallel, #vis-small-multiples { max-width: 100%; margin: 16px auto; }
+    #vis-small-multiples { flex: 0 0 auto; display: inline-block; }
+    label { font-size: 14px; margin-right: 10px; }
+    input[type="range"] { width: 80%; max-width: 400px; }
+    .note { max-width: 1200px; margin: 20px auto; font-size: 12px; color: #555; }
+    h1 { text-align: center; font-family: 'Poppins', sans-serif; letter-spacing: 0.5px; }
+    h2, h3 { text-align: center; font-family: 'Poppins', sans-serif; }
+    .full-row { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; justify-content: center; }
+    .flex-center { display: flex; justify-content: center; width: 100%; }
+    .story-paragraph { max-width: 1200px; margin: 20px auto; font-size: 14px; line-height: 1.6; }
+    .story-paragraph p { text-align: justify; }
+    .note, .note li { text-align: justify; }
+    .domain-info { max-width: 1200px; margin: 20px auto; font-size: 16px; font-weight: bold; }
+    .state-filter-controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin: 10px auto 30px; font-weight: 600; }
+    .state-filter-controls button { padding: 6px 14px; border: 1px solid #888; background: white; border-radius: 4px; cursor: pointer; }
+    .state-filter-controls button:hover { background: #f0e6c5; }
+    .map-controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; margin: 10px auto 20px; }
+    .map-controls label { font-size: 13px; font-weight: 600; margin-right: 4px; }
+    .map-controls input[type="range"] { width: 160px; max-width: none; }
+    .map-controls select { padding: 4px 10px; border: 1px solid #888; border-radius: 4px; background: white; cursor: pointer; }
+    .vega-embed { margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <h1>Economic Inequality and Living Standards Across Malaysian States (2022)</h1>
+  <div class="state-filter-controls">
+    <span id="state-filter-status">Showing: All states</span>
+    <button id="state-filter-clear" type="button">Clear filter</button>
+  </div>
+  <div class="story-paragraph">
+    <p>This dashboard explores the regional inequality in income and living standards across Malaysian states in 2022. By combining spatial, relational, and comparative visuals, it uncovers how prosperity remains concentrated in urbanised states while rural and East Malaysian regions continue to face persistent poverty. Together, these views illustrate that while Malaysia’s economy has grown, its benefits remain unevenly distributed, calling attention to the need for more inclusive development.</p>
+  </div>
+
+  <h2>Regional Income and Poverty Distribution Across Malaysian States</h2>
+  <div class="story-paragraph" style="margin-top: 8px;">
+    <p>Use the sliders to filter states by income and poverty thresholds and explore how economic prosperity varies across regions.</p>
+  </div>
+  <div class="map-controls">
+    <label for="map-zoom">Zoom:</label>
+    <input type="range" id="map-zoom" min="700" max="2200" step="50" value="1300">
+    <label for="map-center">Focus:</label>
+    <select id="map-center">
+      <option value="national">Whole Malaysia</option>
+      <option value="peninsular">Peninsular Malaysia</option>
+      <option value="east">East Malaysia</option>
+    </select>
+  </div>
+  <div class="container">
+    <div class="vis-section">
+      <h3>Median Household Income</h3>
+      <div id="income-slider-container" style="text-align:center;margin:20px 0;">
+        <label for="income-slider">Filter by Minimum Median Income (RM): </label>
+        <input type="range" id="income-slider" min="0" max="12000" step="50" value="0">
+        <span id="slider-value-income">0</span>
+      </div>
+      <div id="vis-income"></div>
+    </div>
+
+    <div class="vis-section">
+      <h3>Absolute Poverty Rate</h3>
+      <div id="poverty-slider-container" style="text-align:center;margin:20px 0;">
+        <label for="poverty-slider">Filter by Minimum Absolute Poverty (%): </label>
+        <input type="range" id="poverty-slider" min="0" max="20" step="0.1" value="0">
+        <span id="slider-value-poverty">0</span>
+      </div>
+      <div id="vis-poverty"></div>
+    </div>
+  </div>
+
+  <div class="story-paragraph">
+    <p>The scatter plot quantifies the inverse relationship between income and poverty, where each point represents a Malaysian state. As median income rises, poverty levels tend to fall, revealing a strong negative correlation between the two. Sabah stands out as a clear outlier, recording the highest poverty rate (19.7%) despite a relatively low median income of RM 4,577, illustrating the persistent challenges faced by East Malaysia. In contrast, Kuala Lumpur, Putrajaya, and Selangor form a distinct cluster at the high-income, low-poverty end of the chart, reflecting the economic advantages of urban and industrialised regions.</p>
+  </div>
+
+  <h2>The Income–Poverty Gap Across Malaysian States</h2>
+  <div class="story-paragraph" style="margin-bottom: 10px;">
+    <p>Drag across the bar chart below to zoom into specific income ranges and observe how poverty levels respond.</p>
+  </div>
+  <div class="full-row flex-center">
+    <div id="vis-scatter"></div>
+  </div>
+
+  <div class="story-paragraph">
+    <p>The heatmap provides a normalised comparison of multiple well-being indicators, where greener shades indicate stronger overall performance. The parallel coordinates complement this view by illustrating how states balance their strengths and weaknesses. Together, these visualisations emphasise that well-being is multidimensional and cannot be represented by income alone.</p>
+  </div>
+
+  <h2>Comparative State Performance Beyond Income and Poverty</h2>
+  <div class="container container-wide" style="align-items: start;">
+    <div class="vis-section" style="text-align: center;">
+      <h3 style="text-align: center;">Heatmap: States vs Metrics</h3>
+      <div id="vis-bar" style="display: flex; justify-content: center;"></div>
+    </div>
+    <div class="vis-section" style="text-align: center;">
+      <h3 style="text-align: center;">Parallel Coordinates: State Profiles</h3>
+      <div id="vis-parallel" style="display: flex; justify-content: center;"></div>
+    </div>
+  </div>
+
+  <h2>State-by-State Comparison of Key Socioeconomic Indicators</h2>
+  <div class="story-paragraph" style="margin-top: 8px;">
+    <p>These small multiples break down each metric by state, offering a side-by-side comparison of regional strengths and weaknesses, making it easy to spot outliers. For instance, Sabah shows high poverty in all forms, while Putrajaya and Kuala Lumpur maintain strong income levels across both mean and median measures.</p>
+  </div>
+  <div class="full-row">
+    <div id="vis-small-multiples"></div>
+  </div>
+
+  <div class="note">
+    <strong>Notes:</strong>
+    <ol>
+      <li>Metrics: Household income (mean & median, RM) and poverty (absolute, hardcore, relative, %).</li>
+      <li>Interaction: Maps and charts are filterable via sliders and brush selection.</li>
+      <li>Colour encoding: Blue and red scales show income and poverty intensity; Green in heatmap shows better overall performance.</li>
+      <li>Annotations: Highlight key insights such as top-performing and high-poverty states.</li>
+    </ol>
+  </div>
+
+  <div class="note">
+    <strong>Metadata:</strong>
+    <ol>
+      <li>Author: Rachelle Yap Zen Yi; Date: 19th October 2025</li>
+      <li>Data Sources (Income by State): https://data.gov.my/data-catalogue/hh_income_state</li>
+      <li>Data Sources (Poverty by State): https://open.dosm.gov.my/data-catalogue/hh_poverty_state</li>
+    </ol>
+  </div>
+
+
+<script>
+/* -------------------- Data -------------------- */
+function normalizeStateName(name) {
+  const mappings = {
+    "W.P. Kuala Lumpur": "Kuala Lumpur",
+    "W.P. Labuan": "Labuan",
+    "W.P. Putrajaya": "Putrajaya",
+    "Pulau Pinang": "Penang",
+    "Melaka": "Malacca"
+  };
+  return mappings[name] || name;
+}
+
+const incomeData = [
+  {"state": "Johor", "income_mean": 8517, "income_median": 6879},
+  {"state": "Kedah", "income_mean": 5550, "income_median": 4402},
+  {"state": "Kelantan", "income_mean": 4885, "income_median": 3614},
+  {"state": "Melaka", "income_mean": 8057, "income_median": 6210},
+  {"state": "Negeri Sembilan", "income_mean": 6788, "income_median": 5226},
+  {"state": "Pahang", "income_mean": 5777, "income_median": 4753},
+  {"state": "Perak", "income_mean": 5779, "income_median": 4494},
+  {"state": "Perlis", "income_mean": 5664, "income_median": 4713},
+  {"state": "Pulau Pinang", "income_mean": 8267, "income_median": 6502},
+  {"state": "Sabah", "income_mean": 6171, "income_median": 4577},
+  {"state": "Sarawak", "income_mean": 6457, "income_median": 4978},
+  {"state": "Selangor", "income_mean": 12233, "income_median": 9983},
+  {"state": "Terengganu", "income_mean": 7248, "income_median": 5878},
+  {"state": "W.P. Kuala Lumpur", "income_mean": 13325, "income_median": 10234},
+  {"state": "W.P. Labuan", "income_mean": 8250, "income_median": 6904},
+  {"state": "W.P. Putrajaya", "income_mean": 13473, "income_median": 10056}
+].map(d => ({ ...d, state: normalizeStateName(d.state) }));
+
+const povertyData = [
+  {"state": "Johor", "poverty_absolute": 4.6, "poverty_hardcore": 0.1, "poverty_relative": 15.9},
+  {"state": "Kedah", "poverty_absolute": 9.0, "poverty_hardcore": 0.3, "poverty_relative": 11.9},
+  {"state": "Kelantan", "poverty_absolute": 13.2, "poverty_hardcore": 0.8, "poverty_relative": 12.2},
+  {"state": "Melaka", "poverty_absolute": 4.2, "poverty_hardcore": 0.1, "poverty_relative": 13.2},
+  {"state": "Negeri Sembilan", "poverty_absolute": 4.4, "poverty_hardcore": 0.1, "poverty_relative": 13.3},
+  {"state": "Pahang", "poverty_absolute": 6.3, "poverty_hardcore": 0.1, "poverty_relative": 7.7},
+  {"state": "Perak", "poverty_absolute": 7.5, "poverty_hardcore": 0.2, "poverty_relative": 13.5},
+  {"state": "Perlis", "poverty_absolute": 4.0, "poverty_hardcore": 0.1, "poverty_relative": 12.6},
+  {"state": "Pulau Pinang", "poverty_absolute": 2.0, "poverty_hardcore": 0.1, "poverty_relative": 15.3},
+  {"state": "Sabah", "poverty_absolute": 19.7, "poverty_hardcore": 1.2, "poverty_relative": 14.5},
+  {"state": "Sarawak", "poverty_absolute": 10.8, "poverty_hardcore": 0.4, "poverty_relative": 16.2},
+  {"state": "Selangor", "poverty_absolute": 1.5, "poverty_hardcore": 0.0, "poverty_relative": 14.2},
+  {"state": "Terengganu", "poverty_absolute": 6.2, "poverty_hardcore": 0.2, "poverty_relative": 6.9},
+  {"state": "W.P. Kuala Lumpur", "poverty_absolute": 1.4, "poverty_hardcore": 0.0, "poverty_relative": 12.7},
+  {"state": "W.P. Labuan", "poverty_absolute": 2.5, "poverty_hardcore": 0.0, "poverty_relative": 7.0},
+  {"state": "W.P. Putrajaya", "poverty_absolute": 0.1, "poverty_hardcore": 0.0, "poverty_relative": 11.4}
+].map(d => ({ ...d, state: normalizeStateName(d.state) }));
+
+const regions = {
+  "Johor": "Peninsular", "Kedah": "Peninsular", "Kelantan": "Peninsular",
+  "Malacca": "Peninsular", "Negeri Sembilan": "Peninsular", "Pahang": "Peninsular",
+  "Perak": "Peninsular", "Perlis": "Peninsular", "Penang": "Peninsular",
+  "Selangor": "Peninsular", "Terengganu": "Peninsular", "Kuala Lumpur": "Peninsular",
+  "Putrajaya": "Peninsular", "Sabah": "East Malaysia", "Sarawak": "East Malaysia",
+  "Labuan": "East Malaysia"
+};
+
+const combinedData = incomeData.map(d => ({
+  ...d,
+  ...povertyData.find(p => p.state === d.state),
+  region: regions[d.state]
+}));
+
+/* -------------------- Shared map bits -------------------- */
+const topoUrl = "ne_10m_admin_1_states_provinces.json"; // local file
+const oceansUrl = "https://raw.githubusercontent.com/FIT3179/Vega-Lite/main/7_others/oceans.topojson";
+
+// Normalize Natural Earth names -> our JS data names
+const mapNameCalc =
+  "datum.properties.name === 'Wilayah Persekutuan Kuala Lumpur' ? 'Kuala Lumpur' : " +
+  "datum.properties.name === 'Wilayah Persekutuan Labuan' ? 'Labuan' : " +
+  "datum.properties.name === 'Wilayah Persekutuan Putrajaya' ? 'Putrajaya' : " +
+  "datum.properties.name === 'Pulau Pinang' ? 'Penang' : " +
+  "datum.properties.name === 'Melaka' ? 'Malacca' : datum.properties.name";
+
+const chartBackground = null;
+
+/* -------------------- Vega-Lite Specs -------------------- */
+
+// Income Map (with oceans + graticules, explicit legend)
+const specIncome = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": chartBackground,
+  "width": 520, "height": 420,
+  "projection": {
+    "type": "mercator",
+    "center": { "expr": "[mapCenterLon, mapCenterLat]" },
+    "scale": { "expr": "mapScale" }
+  },
+  "params": [
+    { "name": "minIncome", "value": 0 },
+    { "name": "stateFilter", "value": null },
+    { "name": "mapScale", "value": 1300 },
+    { "name": "mapCenterLon", "value": 110 },
+    { "name": "mapCenterLat", "value": 4.5 }
+  ],
+  "layer": [
+    { "data": { "url": oceansUrl, "format": { "type": "topojson", "feature": "oceans" } },
+      "mark": { "type": "geoshape", "fill": "#cce5ff" } },
+    { "data": { "graticule": { "step": [1, 1] } },
+      "mark": { "type": "geoshape", "stroke": "#cccccc", "strokeWidth": 1, "fill": null } },
+    {
+      "data": { "url": topoUrl, "format": { "type": "topojson", "feature": "ne_10m_admin_1_states_provinces" } },
+      "transform": [
+        { "filter": "datum.properties.iso_a2 === 'MY'" },
+        { "calculate": mapNameCalc, "as": "state" },
+        { "lookup": "state", "from": { "data": { "values": incomeData }, "key": "state", "fields": ["income_median"] } },
+        { "filter": "isValid(datum.income_median) && datum.income_median >= minIncome" },
+        { "filter": "!stateFilter || datum.state === stateFilter" }
+      ],
+      "mark": { "type": "geoshape", "stroke": "#444", "strokeWidth": 0.6 },
+      "encoding": {
+        "color": { "field": "income_median", "type": "quantitative",
+                   "scale": { "scheme": "blues", "domain": [0, 12000] },
+                   "title": "Median Income (RM)",
+                   "legend": { "title": "Median Income (RM)", "orient": "bottom", "gradientLength": 200 } },
+        "tooltip": [
+          { "field": "state", "title": "State" },
+          { "field": "income_median", "title": "Median Income (RM)", "format": ",.0f" }
+        ]
+      }
+    },
+    {
+      "data": {
+        "values": [
+          {
+            "anchorLon": 101.7,
+            "anchorLat": 2.8,
+            "textLon": 104.0,
+            "textLat": 8.1,
+            "label": "Highest Median Income: Putrajaya (RM 10,056)"
+          }
+        ]
+      },
+      "layer": [
+        {
+          "mark": { "type": "rule", "stroke": "#333", "strokeDash": [4, 2] },
+          "encoding": {
+            "longitude": { "field": "anchorLon" },
+            "latitude": { "field": "anchorLat" },
+            "longitude2": { "field": "textLon" },
+            "latitude2": { "field": "textLat" }
+          }
+        },
+        {
+          "mark": { "type": "text", "fontSize": 12, "fontWeight": "bold", "fill": "black", "align": "left", "baseline": "top", "dx": 6, "dy": -6 },
+          "encoding": {
+            "text": { "field": "label" },
+            "longitude": { "field": "textLon" },
+            "latitude": { "field": "textLat" }
+          }
+        }
+      ]
+    }
+  ]
+};
+
+// Poverty Map (with oceans + graticules, explicit legend)
+const specPoverty = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": chartBackground,
+  "width": 520, "height": 420,
+  "projection": {
+    "type": "mercator",
+    "center": { "expr": "[mapCenterLon, mapCenterLat]" },
+    "scale": { "expr": "mapScale" }
+  },
+  "params": [
+    { "name": "minPoverty", "value": 0 },
+    { "name": "stateFilter", "value": null },
+    { "name": "mapScale", "value": 1300 },
+    { "name": "mapCenterLon", "value": 110 },
+    { "name": "mapCenterLat", "value": 4.5 }
+  ],
+  "layer": [
+    { "data": { "url": oceansUrl, "format": { "type": "topojson", "feature": "oceans" } },
+      "mark": { "type": "geoshape", "fill": "#cce5ff" } },
+    { "data": { "graticule": { "step": [1, 1] } },
+      "mark": { "type": "geoshape", "stroke": "#cccccc", "strokeWidth": 1, "fill": null } },
+    {
+      "data": { "url": topoUrl, "format": { "type": "topojson", "feature": "ne_10m_admin_1_states_provinces" } },
+      "transform": [
+        { "filter": "datum.properties.iso_a2 === 'MY'" },
+        { "calculate": mapNameCalc, "as": "state" },
+        { "lookup": "state", "from": { "data": { "values": povertyData }, "key": "state",
+                                       "fields": ["poverty_absolute","poverty_hardcore","poverty_relative"] } },
+        { "filter": "isValid(datum.poverty_absolute) && datum.poverty_absolute >= minPoverty" },
+        { "filter": "!stateFilter || datum.state === stateFilter" }
+      ],
+      "mark": { "type": "geoshape", "stroke": "#444", "strokeWidth": 0.6 },
+      "encoding": {
+        "color": { "field": "poverty_absolute", "type": "quantitative",
+                   "scale": { "scheme": "reds", "domain": [0, 20] },
+                   "title": "Absolute Poverty (%)",
+                   "legend": { "title": "Absolute Poverty (%)", "orient": "bottom", "gradientLength": 200 } },
+        "tooltip": [
+          { "field": "state", "title": "State" },
+          { "field": "poverty_absolute", "title": "Absolute Poverty (%)", "format": ".1f" },
+          { "field": "poverty_hardcore", "title": "Hardcore Poverty (%)", "format": ".1f" },
+          { "field": "poverty_relative", "title": "Relative Poverty (%)", "format": ".1f" }
+        ]
+      }
+    },
+    {
+      "data": {
+        "values": [
+          {
+            "anchorLon": 116.0,
+            "anchorLat": 5.7,
+            "textLon": 110.5,
+            "textLat": 8.0,
+            "label": "Highest Poverty: Sabah (19.7%)"
+          }
+        ]
+      },
+      "layer": [
+        {
+          "mark": { "type": "rule", "stroke": "#333", "strokeDash": [4, 2] },
+          "encoding": {
+            "longitude": { "field": "anchorLon" },
+            "latitude": { "field": "anchorLat" },
+            "longitude2": { "field": "textLon" },
+            "latitude2": { "field": "textLat" }
+          }
+        },
+        {
+          "mark": { "type": "text", "fontSize": 12, "fontWeight": "bold", "fill": "black", "align": "left", "baseline": "top", "dx": 6, "dy": -6 },
+          "encoding": {
+            "text": { "field": "label" },
+            "longitude": { "field": "textLon" },
+            "latitude": { "field": "textLat" }
+          }
+        }
+      ]
+    }
+  ]
+};
+
+// Scatter (explicit legend, annotations)
+const specScatter = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": chartBackground,
+  "data": { "values": combinedData },
+  "params": [
+    { "name": "stateFilter", "value": null }
+  ],
+  "vconcat": [
+    {
+      "width": 960,
+      "height": 320,
+      "transform": [
+        { "filter": "!stateFilter || datum.state === stateFilter" },
+        { "filter": { "param": "incomeBrush" } }
+      ],
+      "layer": [
+        {
+          "mark": { "type": "point", "size": 110, "filled": true, "opacity": 0.9 },
+          "encoding": {
+            "x": { "field": "income_median", "type": "quantitative", "title": "Median Income (RM)", "scale": { "domain": [0, 12000] } },
+            "y": { "field": "poverty_absolute", "type": "quantitative", "title": "Absolute Poverty (%)" },
+            "color": { "field": "region", "type": "nominal", "title": "Region",
+                       "legend": { "title": "Region", "orient": "right" } },
+            "tooltip": [
+              { "field": "state", "title": "State" },
+              { "field": "income_median", "title": "Median Income (RM)", "format": ",.0f" },
+              { "field": "poverty_absolute", "title": "Absolute Poverty (%)", "format": ".1f" }
+            ]
+          }
+        },
+        {
+          "mark": { "type": "text", "align": "left", "baseline": "middle", "dx": 7, "fontSize": 10 },
+          "encoding": {
+            "x": { "field": "income_median", "type": "quantitative" },
+            "y": { "field": "poverty_absolute", "type": "quantitative" },
+            "text": { "field": "state" },
+            "color": { "field": "region", "type": "nominal", "legend": null }
+          }
+        },
+        {
+          "transform": [
+            { "filter": "datum.state === 'Sabah'" },
+            { "calculate": "datum.income_median + 2500", "as": "textX" },
+            { "calculate": "datum.poverty_absolute - 3", "as": "textY" }
+          ],
+          "layer": [
+            {
+              "mark": { "type": "rule", "stroke": "#333", "strokeDash": [4, 2] },
+              "encoding": {
+                "x": { "field": "income_median", "type": "quantitative" },
+                "y": { "field": "poverty_absolute", "type": "quantitative" },
+                "x2": { "field": "textX", "type": "quantitative" },
+                "y2": { "field": "textY", "type": "quantitative" }
+              }
+            },
+            {
+              "mark": { "type": "text", "fontSize": 12, "fontWeight": "bold", "fill": "black", "align": "left", "baseline": "middle", "dx": 6 },
+              "encoding": {
+                "text": { "value": "Sabah: Highest poverty despite lower income" },
+                "x": { "field": "textX", "type": "quantitative" },
+                "y": { "field": "textY", "type": "quantitative" }
+              }
+            }
+          ]
+        },
+        {
+          "data": {
+            "values": [
+              {
+                "anchorX": 9900,
+                "anchorY": 1.3,
+                "textX": 8200,
+                "textY": 4.5
+              }
+            ]
+          },
+          "layer": [
+            {
+              "mark": { "type": "rule", "stroke": "#333", "strokeDash": [4, 2] },
+              "encoding": {
+                "x": { "field": "anchorX", "type": "quantitative" },
+                "y": { "field": "anchorY", "type": "quantitative" },
+                "x2": { "field": "textX", "type": "quantitative" },
+                "y2": { "field": "textY", "type": "quantitative" }
+              }
+            },
+            {
+              "mark": { "type": "text", "fontSize": 12, "fontWeight": "bold", "fill": "black", "align": "left", "baseline": "middle", "dx": 6 },
+              "encoding": {
+                "text": { "value": "KL, Putrajaya & Selangor: High income, low poverty" },
+                "x": { "field": "textX", "type": "quantitative" },
+                "y": { "field": "textY", "type": "quantitative" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "width": 1000,
+      "height": 90,
+      "title": { "text": "State Income Brush", "anchor": "middle", "fontSize": 14, "offset": 10 },
+      "transform": [
+        { "filter": "!stateFilter || datum.state === stateFilter" }
+      ],
+      "params": [
+        {
+          "name": "incomeBrush",
+          "select": { "type": "interval", "encodings": ["x"], "empty": "all" }
+        }
+      ],
+      "mark": { "type": "bar" },
+      "encoding": {
+        "x": { "field": "state", "type": "ordinal", "sort": {"field": "income_median", "order": "ascending"},
+               "axis": { "labelAngle": -40 },
+               "title": "State" },
+        "y": { "field": "income_median", "type": "quantitative", "title": "Median Income (RM)" },
+        "color": { "field": "region", "type": "nominal", "title": "Region", "legend": null },
+        "tooltip": [
+          { "field": "state", "title": "State" },
+          { "field": "income_median", "title": "Median Income (RM)", "format": ",.0f" }
+        ]
+      }
+    }
+  ]
+};
+
+/* -------------------- HEATMAP (labels + annotations, explicit legend) -------------------- */
+const specHeatmap = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": chartBackground,
+  "width": 520, "height": 420,
+  "data": { "values": combinedData },
+  "params": [
+    { "name": "stateFilter", "value": null }
+  ],
+  "transform": [
+    { "filter": "!stateFilter || datum.state === stateFilter" },
+    { "fold": ["income_median","poverty_absolute","poverty_hardcore","poverty_relative"],
+      "as": ["metric","value"] },
+
+    /* readable metric labels */
+    { "calculate":
+        "datum.metric === 'income_median' ? 'Median income (RM)' : " +
+        "datum.metric === 'poverty_absolute' ? 'Absolute poverty (%)' : " +
+        "datum.metric === 'poverty_hardcore' ? 'Hardcore poverty (%)' : " +
+        "'Relative poverty (%)'",
+      "as": "metricLabel" },
+
+    /* min/max + count per metric */
+    { "joinaggregate": [
+        {"op":"min","field":"value","as":"mmin"},
+        {"op":"max","field":"value","as":"mmax"},
+        {"op":"count","field":"value","as":"mcount"}
+      ],
+      "groupby": ["metric"] },
+
+    /* normalize 0..1; invert poverty so higher=better */
+    { "calculate": "(datum.value - datum.mmin) / (datum.mmax - datum.mmin)", "as": "norm" },
+    { "calculate": "datum.metric === 'income_median' ? datum.norm : 1 - datum.norm", "as": "score" },
+
+    /* rank (descending) within each metric for annotations */
+    { "window": [{"op":"rank","as":"rank_desc"}],
+      "sort": [{"field":"value","order":"descending"}],
+      "frame": [null, null],
+      "groupby": ["metric"] },
+
+    /* value labels: RM 0dp, % 1dp */
+    { "calculate": "datum.metric === 'income_median' ? format(datum.value, ',.0f') : format(datum.value, '.1f')",
+      "as": "valueLabel" },
+
+    /* tooltip-friendly normalised label */
+    { "calculate": "format(datum.score, '.2f')", "as": "scoreLabel" }
+  ],
+
+  "layer": [
+    /* tiles with conditional outlines */
+    {
+      "mark": "rect",
+      "encoding": {
+        "y": {"field":"state","type":"ordinal","sort":{"field":"income_median","order":"descending"},"title":"State"},
+        "x": {"field":"metricLabel","type":"ordinal",
+              "sort":["Median income (RM)","Absolute poverty (%)","Hardcore poverty (%)","Relative poverty (%)"],
+              "axis":{"labelAngle":0},"title": null},
+        "color": {"field":"score","type":"quantitative","scale":{"scheme":"greens"},
+                  "title": "Score",
+                  "legend": { "title": "Score (Greener = Better)", "orient": "bottom", "gradientLength": 240 }},
+        "stroke": {
+          "condition": [
+            {"test": "datum.metric === 'income_median' && datum.rank_desc === 1", "value": "#222"},      /* top income */
+            {"test": "datum.metric === 'poverty_absolute' && datum.rank_desc === 1", "value": "#c0392b"},/* worst abs pov */
+            {"test": "datum.metric === 'poverty_absolute' && datum.rank_desc === datum.mcount", "value": "#1e8449"} /* best abs pov */
+          ],
+          "value": null
+        },
+        "strokeWidth": {
+          "condition": [
+            {"test": "datum.metric === 'income_median' && datum.rank_desc === 1", "value": 2},
+            {"test": "datum.metric === 'poverty_absolute' && (datum.rank_desc === 1 || datum.rank_desc === datum.mcount)", "value": 2}
+          ],
+          "value": 0
+        },
+        "tooltip": [
+          {"field":"state","title":"State"},
+          {"field":"metricLabel","title":"Metric"},
+          {"field":"valueLabel","title":"Original Value"},
+          {"field":"scoreLabel","title":"Normalised Value"}
+        ]
+      }
+    },
+
+    /* value labels on top */
+    {
+      "mark": {"type":"text","fontSize":10,"baseline":"middle","align":"center"},
+      "encoding": {
+        "y": {"field":"state","type":"ordinal","sort":{"field":"income_median","order":"descending"}},
+        "x": {"field":"metricLabel","type":"ordinal",
+              "sort":["Median income (RM)","Absolute poverty (%)","Hardcore poverty (%)","Relative poverty (%)"]},
+        "text": {"field":"valueLabel"},
+        "color": {
+          "condition": [
+            {"test": "datum.score >= 0.6", "value": "white"},
+            {"test": "datum.score <= 0.25", "value": "#333"}
+          ],
+          "value": "black"
+        }
+      }
+    }
+  ]
+};
+
+// Parallel Coordinates (normalize so higher = better, add legend, fix tooltip)
+const specParallel = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": chartBackground,
+  "width": 520, "height": 420,
+  "data": { "values": combinedData },
+  "params": [
+    { "name": "stateFilter", "value": null }
+  ],
+  "transform": [
+    { "filter": "!stateFilter || datum.state === stateFilter" },
+    { "fold": ["income_median", "poverty_absolute", "poverty_hardcore", "poverty_relative"], "as": ["metric", "value"] },
+    { "calculate": "datum.metric === 'income_median' ? (datum.value / 13473) * 20 : 20 - datum.value", "as": "normalised" },
+    // Readable metric labels for tooltip
+    { "calculate":
+        "datum.metric === 'income_median' ? 'Median Income (RM)' : " +
+        "datum.metric === 'poverty_absolute' ? 'Absolute Poverty (%)' : " +
+        "datum.metric === 'poverty_hardcore' ? 'Hardcore Poverty (%)' : " +
+        "'Relative Poverty (%)'",
+      "as": "metricLabel" },
+    // Format value for tooltip
+    { "calculate": "datum.metric === 'income_median' ? format(datum.value, ',.0f') : format(datum.value, '.1f')", "as": "valueLabel" }
+  ],
+  "mark": { "type": "line", "point": true }, // Add points to enhance interactivity
+  "encoding": {
+    "x": { 
+      "field": "metric", 
+      "type": "nominal",
+      "sort": ["income_median", "poverty_absolute", "poverty_hardcore", "poverty_relative"],
+      "title": null,
+      "axis": { "labelAngle": 0 }
+    },
+    "y": { 
+      "field": "normalised", 
+      "type": "quantitative", 
+      "title": "Normalised Value (Higher = Better)", 
+      "scale": { "domain": [0, 20] } 
+    },
+    "color": { 
+      "field": "state", 
+      "type": "nominal", 
+      "title": "State",
+      "legend": { "title": "State", "orient": "bottom", "columns": 6 } 
+    },
+    "detail": { "field": "state" },
+    "tooltip": [
+      { "field": "state", "title": "State" },
+      { "field": "metricLabel", "title": "Metric" },
+      { "field": "valueLabel", "title": "Value" },
+      { "field": "normalised", "type": "quantitative", "title": "Normalised Value", "format": ".1f" }
+    ]
+  },
+  "selection": {
+    "hover": {
+      "type": "single",
+      "on": "mouseover",
+      "fields": ["state"],
+      "clear": "mouseout"
+    }
+  }
+};
+
+const specSmallMultiples = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": chartBackground,
+  "data": { "values": combinedData },
+  "params": [
+    { "name": "stateFilter", "value": null }
+  ],
+  "transform": [
+    { "filter": "!stateFilter || datum.state === stateFilter" },
+    { "fold": ["income_median", "income_mean", "poverty_absolute", "poverty_hardcore", "poverty_relative"],
+      "as": ["metricField", "metricValue"] },
+    { "calculate":
+        "datum.metricField === 'income_median' ? 'Median income (RM)' : " +
+        "datum.metricField === 'income_mean' ? 'Mean income (RM)' : " +
+        "datum.metricField === 'poverty_absolute' ? 'Absolute poverty (%)' : " +
+        "datum.metricField === 'poverty_hardcore' ? 'Hardcore poverty (%)' : " +
+        "'Relative poverty (%)'",
+      "as": "metricLabel" },
+    { "calculate":
+        "datum.metricField === 'income_median' || datum.metricField === 'income_mean' ? format(datum.metricValue, ',.0f') : format(datum.metricValue, '.1f')",
+      "as": "metricValueLabel" }
+  ],
+  "facet": {
+    "column": {
+      "field": "metricLabel",
+      "type": "nominal",
+      "sort": [
+        "Median income (RM)",
+        "Mean income (RM)",
+        "Absolute poverty (%)",
+        "Hardcore poverty (%)",
+        "Relative poverty (%)"
+      ],
+      "title": null
+    },
+    "spacing": 20,
+    "align": { "column": "center" }
+  },
+  "spec": {
+    "width": 200,
+    "height": 320,
+    "mark": { "type": "bar" },
+    "encoding": {
+      "y": { "field": "state", "type": "ordinal", "sort": { "field": "income_median", "order": "descending" }, "title": "State" },
+      "x": { "field": "metricValue", "type": "quantitative", "title": "Metric Value" },
+      "color": { "field": "region", "type": "nominal", "title": "Region",
+                 "legend": { "orient": "bottom", "direction": "horizontal" } },
+      "tooltip": [
+        { "field": "metricLabel", "type": "nominal", "title": "Metric" },
+        { "field": "state", "type": "nominal", "title": "State" },
+        { "field": "region", "type": "nominal", "title": "Region" },
+        { "field": "metricValueLabel", "type": "nominal", "title": "Value" }
+      ]
+    }
+  },
+  "resolve": { "scale": { "x": "independent" } }
+};
+
+/* -------------------- Render + Slider Wiring -------------------- */
+
+const statefulViews = [];
+let currentStateFilter = null;
+
+function applyStateFilter(view, value) {
+  view.signal('stateFilter', value).run();
+}
+
+function refreshStateFilterLabel() {
+  const labelEl = document.getElementById('state-filter-status');
+  if (!labelEl) return;
+  labelEl.textContent = currentStateFilter ? `Showing: ${currentStateFilter}` : 'Showing: All states';
+}
+
+function updateStateFilter(value) {
+  currentStateFilter = value;
+  statefulViews.forEach(view => applyStateFilter(view, value));
+  refreshStateFilterLabel();
+}
+
+function attachStateClickHandlers(view) {
+  view.addEventListener('click', (_, item) => {
+    const clickedState = item && item.datum && item.datum.state;
+    if (!clickedState) return;
+    updateStateFilter(clickedState === currentStateFilter ? null : clickedState);
+  });
+  view.addEventListener('dblclick', () => updateStateFilter(null));
+}
+
+function registerStatefulView(view, { enableClick = true } = {}) {
+  statefulViews.push(view);
+  if (currentStateFilter !== null) {
+    applyStateFilter(view, currentStateFilter);
+  }
+  if (enableClick) {
+    attachStateClickHandlers(view);
+  }
+}
+
+const clearStateButton = document.getElementById('state-filter-clear');
+if (clearStateButton) {
+  clearStateButton.addEventListener('click', () => updateStateFilter(null));
+}
+refreshStateFilterLabel();
+
+const mapViews = [];
+const mapCenterOptions = {
+  national: { lon: 110, lat: 4.5, scale: 1300 },
+  peninsular: { lon: 102.5, lat: 4.5, scale: 2000 },
+  east: { lon: 113.5, lat: 3.8, scale: 1700 }
+};
+const mapConfig = { ...mapCenterOptions.national };
+
+function applyMapSettingsToView(view) {
+  view.signal('mapScale', mapConfig.scale).run();
+  view.signal('mapCenterLon', mapConfig.lon).run();
+  view.signal('mapCenterLat', mapConfig.lat).run();
+}
+
+function registerMapView(view) {
+  mapViews.push(view);
+  applyMapSettingsToView(view);
+}
+
+function updateMapScale(scale) {
+  mapConfig.scale = scale;
+  mapViews.forEach(view => view.signal('mapScale', scale).run());
+}
+
+function updateMapCenter({ lon, lat }) {
+  mapConfig.lon = lon;
+  mapConfig.lat = lat;
+  mapViews.forEach(view => {
+    view.signal('mapCenterLon', lon).run();
+    view.signal('mapCenterLat', lat).run();
+  });
+}
+
+const mapZoomInput = document.getElementById('map-zoom');
+if (mapZoomInput) {
+  mapZoomInput.value = mapConfig.scale;
+  mapZoomInput.addEventListener('input', e => updateMapScale(+e.target.value));
+}
+
+const mapCenterSelect = document.getElementById('map-center');
+if (mapCenterSelect) {
+  mapCenterSelect.addEventListener('change', e => {
+    const option = mapCenterOptions[e.target.value] || mapCenterOptions.national;
+    if (mapZoomInput) {
+      mapZoomInput.value = option.scale;
+    }
+    updateMapScale(option.scale);
+    updateMapCenter(option);
+  });
+}
+
+vegaEmbed("#vis-income", specIncome, { actions: false }).then(({ view }) => {
+  const slider = document.getElementById('income-slider');
+  const out = document.getElementById('slider-value-income');
+  out.textContent = slider.value;
+  view.signal('minIncome', +slider.value).run();
+  slider.addEventListener('input', e => {
+    const v = +e.target.value;
+    out.textContent = v;
+    view.signal('minIncome', v).run();
+  });
+  registerStatefulView(view);
+  registerMapView(view);
+});
+
+vegaEmbed("#vis-poverty", specPoverty, { actions: false }).then(({ view }) => {
+  const slider = document.getElementById('poverty-slider');
+  const out = document.getElementById('slider-value-poverty');
+  out.textContent = slider.value;
+  view.signal('minPoverty', +slider.value).run();
+  slider.addEventListener('input', e => {
+    const v = +e.target.value;
+    out.textContent = v;
+    view.signal('minPoverty', v).run();
+  });
+  registerStatefulView(view);
+  registerMapView(view);
+});
+
+vegaEmbed("#vis-scatter", specScatter, { actions: false }).then(({ view }) => {
+  registerStatefulView(view);
+});
+
+vegaEmbed("#vis-bar", specHeatmap, { actions: false }).then(({ view }) => {
+  registerStatefulView(view);
+});  // heatmap here
+
+vegaEmbed("#vis-parallel", specParallel, { actions: false }).then(({ view }) => {
+  registerStatefulView(view);
+});
+
+vegaEmbed("#vis-small-multiples", specSmallMultiples, { actions: false }).then(({ view }) => {
+  registerStatefulView(view);
+});
+
+</script>
+</body>
+</html>
