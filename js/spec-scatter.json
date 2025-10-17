@@ -1,0 +1,175 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": "white",
+
+  "datasets": {
+    "combinedData": [
+      { "state": "Johor", "income_mean": 8517, "income_median": 6879, "poverty_absolute": 4.6, "poverty_hardcore": 0.1, "poverty_relative": 15.9, "region": "Peninsular" },
+      { "state": "Kedah", "income_mean": 5550, "income_median": 4402, "poverty_absolute": 9, "poverty_hardcore": 0.3, "poverty_relative": 11.9, "region": "Peninsular" },
+      { "state": "Kelantan", "income_mean": 4885, "income_median": 3614, "poverty_absolute": 13.2, "poverty_hardcore": 0.8, "poverty_relative": 12.2, "region": "Peninsular" },
+      { "state": "Malacca", "income_mean": 8057, "income_median": 6210, "poverty_absolute": 4.2, "poverty_hardcore": 0.1, "poverty_relative": 13.2, "region": "Peninsular" },
+      { "state": "Negeri Sembilan", "income_mean": 6788, "income_median": 5226, "poverty_absolute": 4.4, "poverty_hardcore": 0.1, "poverty_relative": 13.3, "region": "Peninsular" },
+      { "state": "Pahang", "income_mean": 5777, "income_median": 4753, "poverty_absolute": 6.3, "poverty_hardcore": 0.1, "poverty_relative": 7.7, "region": "Peninsular" },
+      { "state": "Perak", "income_mean": 5779, "income_median": 4494, "poverty_absolute": 7.5, "poverty_hardcore": 0.2, "poverty_relative": 13.5, "region": "Peninsular" },
+      { "state": "Perlis", "income_mean": 5664, "income_median": 4713, "poverty_absolute": 4, "poverty_hardcore": 0.1, "poverty_relative": 12.6, "region": "Peninsular" },
+      { "state": "Penang", "income_mean": 8267, "income_median": 6502, "poverty_absolute": 2, "poverty_hardcore": 0.1, "poverty_relative": 15.3, "region": "Peninsular" },
+      { "state": "Sabah", "income_mean": 6171, "income_median": 4577, "poverty_absolute": 19.7, "poverty_hardcore": 1.2, "poverty_relative": 14.5, "region": "East Malaysia" },
+      { "state": "Sarawak", "income_mean": 6457, "income_median": 4978, "poverty_absolute": 10.8, "poverty_hardcore": 0.4, "poverty_relative": 16.2, "region": "East Malaysia" },
+      { "state": "Selangor", "income_mean": 12233, "income_median": 9983, "poverty_absolute": 1.5, "poverty_hardcore": 0, "poverty_relative": 14.2, "region": "Peninsular" },
+      { "state": "Terengganu", "income_mean": 7248, "income_median": 5878, "poverty_absolute": 6.2, "poverty_hardcore": 0.2, "poverty_relative": 6.9, "region": "Peninsular" },
+      { "state": "Kuala Lumpur", "income_mean": 13325, "income_median": 10234, "poverty_absolute": 1.4, "poverty_hardcore": 0, "poverty_relative": 12.7, "region": "Peninsular" },
+      { "state": "Labuan", "income_mean": 8250, "income_median": 6904, "poverty_absolute": 2.5, "poverty_hardcore": 0, "poverty_relative": 7, "region": "East Malaysia" },
+      { "state": "Putrajaya", "income_mean": 13473, "income_median": 10056, "poverty_absolute": 0.1, "poverty_hardcore": 0, "poverty_relative": 11.4, "region": "Peninsular" }
+    ]
+  },
+
+  "params": [{ "name": "stateFilter", "value": null }],
+
+  "vconcat": [
+    {
+      "data": { "name": "combinedData" },
+      "width": 840,
+      "height": 320,
+      "transform": [
+        { "filter": "!stateFilter || datum.state === stateFilter" },
+        { "filter": { "param": "incomeBrush" } }
+      ],
+      "layer": [
+        {
+          "transform": [
+            { "filter": "!stateFilter && length(data('incomeBrush_store')) === 0" },
+            { "regression": "poverty_absolute", "on": "income_median", "order": 3, "extent": [0, 12000] }
+          ],
+          "mark": { "type": "line", "color": "#d73027", "strokeDash": [6, 4], "strokeWidth": 2, "opacity": 0.28, "interpolate": "monotone" },
+          "encoding": {
+            "x": { "field": "income_median", "type": "quantitative" },
+            "y": { "field": "poverty_absolute", "type": "quantitative" }
+          }
+        },
+        {
+          "mark": { "type": "point", "size": 110, "filled": true, "opacity": 0.9 },
+          "encoding": {
+            "x": { "field": "income_median", "type": "quantitative", "title": "Median Income (RM)", "scale": { "domain": [0, 12000] } },
+            "y": { "field": "poverty_absolute", "type": "quantitative", "title": "Absolute Poverty (%)" },
+            "color": {
+              "field": "state",
+              "type": "nominal",
+              "title": "State",
+              "legend": { "title": "State", "orient": "bottom", "columns": 8 },
+              "scale": {
+                "domain": ["Johor","Kedah","Kelantan","Malacca","Negeri Sembilan","Pahang","Perak","Perlis","Penang","Sabah","Sarawak","Selangor","Terengganu","Kuala Lumpur","Putrajaya","Labuan"],
+                "range": ["#332288","#88CCEE","#117733","#DDCC77","#CC6677","#AA4499","#44AA99","#999933","#882255","#6699CC","#661100","#AA4466","#4477AA","#77AADD","#CCDDAA","#954F72"]
+              }
+            },
+            "tooltip": [
+              { "field": "state", "title": "State" },
+              { "field": "income_median", "title": "Median Income (RM)", "format": ",.0f" },
+              { "field": "poverty_absolute", "title": "Absolute Poverty (%)", "format": ".1f" }
+            ]
+          }
+        },
+        {
+          "mark": { "type": "text", "align": "left", "baseline": "middle", "dx": 7, "fontSize": 10 },
+          "encoding": {
+            "x": { "field": "income_median", "type": "quantitative" },
+            "y": { "field": "poverty_absolute", "type": "quantitative" },
+            "text": { "field": "state" },
+            "color": {
+              "field": "state",
+              "type": "nominal",
+              "legend": null,
+              "scale": {
+                "domain": ["Johor","Kedah","Kelantan","Malacca","Negeri Sembilan","Pahang","Perak","Perlis","Penang","Sabah","Sarawak","Selangor","Terengganu","Kuala Lumpur","Putrajaya","Labuan"],
+                "range": ["#332288","#88CCEE","#117733","#DDCC77","#CC6677","#AA4499","#44AA99","#999933","#882255","#6699CC","#661100","#AA4466","#4477AA","#77AADD","#CCDDAA","#954F72"]
+              }
+            }
+          }
+        },
+        {
+          "transform": [
+            { "filter": "datum.state === 'Sabah'" },
+            { "calculate": "datum.income_median + 2500", "as": "textX" },
+            { "calculate": "datum.poverty_absolute - 3", "as": "textY" }
+          ],
+          "layer": [
+            {
+              "mark": { "type": "rule", "stroke": "#333", "strokeDash": [4, 2] },
+              "encoding": {
+                "x": { "field": "income_median", "type": "quantitative" },
+                "y": { "field": "poverty_absolute", "type": "quantitative" },
+                "x2": { "field": "textX"},
+                "y2": { "field": "textY"}
+              }
+            },
+            {
+              "mark": { "type": "text", "fontSize": 12, "fontWeight": "bold", "fill": "black", "align": "left", "baseline": "middle", "dx": 6 },
+              "encoding": {
+                "text": { "value": "Sabah is highest poverty, lower income" },
+                "x": { "field": "textX", "type": "quantitative" },
+                "y": { "field": "textY", "type": "quantitative" }
+              }
+            }
+          ]
+        },
+        {
+          "transform": [
+            { "filter": "datum.state === 'Kuala Lumpur'" },
+            { "filter": "!stateFilter || datum.state === stateFilter" },
+            { "calculate": "datum.income_median", "as": "anchorX" },
+            { "calculate": "datum.poverty_absolute", "as": "anchorY" },
+            { "calculate": "datum.income_median - 2200", "as": "textX" },
+            { "calculate": "datum.poverty_absolute + 3", "as": "textY" }
+          ],
+          "layer": [
+            {
+              "mark": { "type": "rule", "stroke": "#333", "strokeDash": [4, 2] },
+              "encoding": {
+                "x": { "field": "anchorX", "type": "quantitative" },
+                "y": { "field": "anchorY", "type": "quantitative" },
+                "x2": { "field": "textX"},
+                "y2": { "field": "textY"}
+              }
+            },
+            {
+              "mark": { "type": "text", "fontSize": 12, "fontWeight": "bold", "fill": "black", "align": "left", "baseline": "middle", "dx": 6 },
+              "encoding": {
+                "text": { "value": "KL is high income, low poverty" },
+                "x": { "field": "textX", "type": "quantitative" },
+                "y": { "field": "textY", "type": "quantitative" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "data": { "name": "combinedData" },
+      "width": 840,
+      "height": 90,
+      "title": { "text": "State Income Brush", "anchor": "middle", "fontSize": 14, "offset": 10 },
+      "transform": [{ "filter": "!stateFilter || datum.state === stateFilter" }],
+      "params": [
+        { "name": "incomeBrush", "select": { "type": "interval", "encodings": ["x"]} }
+      ],
+      "mark": { "type": "bar" },
+      "encoding": {
+        "x": { "field": "state", "type": "ordinal", "sort": { "field": "income_median", "order": "ascending" }, "axis": { "labelAngle": -40 }, "title": "State" },
+        "y": { "field": "income_median", "type": "quantitative", "title": "Median Income (RM)" },
+        "color": {
+          "field": "state",
+          "type": "nominal",
+          "title": "State",
+          "legend": { "title": "State", "orient": "bottom", "columns": 8 },
+          "scale": {
+            "domain": ["Johor","Kedah","Kelantan","Malacca","Negeri Sembilan","Pahang","Perak","Perlis","Penang","Sabah","Sarawak","Selangor","Terengganu","Kuala Lumpur","Putrajaya","Labuan"],
+            "range": ["#332288","#88CCEE","#117733","#DDCC77","#CC6677","#AA4499","#44AA99","#999933","#882255","#6699CC","#661100","#AA4466","#4477AA","#77AADD","#CCDDAA","#954F72"]
+          }
+        },
+        "tooltip": [
+          { "field": "state", "title": "State" },
+          { "field": "income_median", "title": "Median Income (RM)", "format": ",.0f" }
+        ]
+      }
+    }
+  ]
+}

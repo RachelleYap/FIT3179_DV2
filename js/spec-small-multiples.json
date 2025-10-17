@@ -1,0 +1,67 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": "white",
+  "datasets": {
+    "combinedData": [
+      { "state": "Johor", "income_mean": 8517, "income_median": 6879, "poverty_absolute": 4.6, "poverty_hardcore": 0.1, "poverty_relative": 15.9, "region": "Peninsular" },
+      { "state": "Kedah", "income_mean": 5550, "income_median": 4402, "poverty_absolute": 9, "poverty_hardcore": 0.3, "poverty_relative": 11.9, "region": "Peninsular" },
+      { "state": "Kelantan", "income_mean": 4885, "income_median": 3614, "poverty_absolute": 13.2, "poverty_hardcore": 0.8, "poverty_relative": 12.2, "region": "Peninsular" },
+      { "state": "Malacca", "income_mean": 8057, "income_median": 6210, "poverty_absolute": 4.2, "poverty_hardcore": 0.1, "poverty_relative": 13.2, "region": "Peninsular" },
+      { "state": "Negeri Sembilan", "income_mean": 6788, "income_median": 5226, "poverty_absolute": 4.4, "poverty_hardcore": 0.1, "poverty_relative": 13.3, "region": "Peninsular" },
+      { "state": "Pahang", "income_mean": 5777, "income_median": 4753, "poverty_absolute": 6.3, "poverty_hardcore": 0.1, "poverty_relative": 7.7, "region": "Peninsular" },
+      { "state": "Perak", "income_mean": 5779, "income_median": 4494, "poverty_absolute": 7.5, "poverty_hardcore": 0.2, "poverty_relative": 13.5, "region": "Peninsular" },
+      { "state": "Perlis", "income_mean": 5664, "income_median": 4713, "poverty_absolute": 4, "poverty_hardcore": 0.1, "poverty_relative": 12.6, "region": "Peninsular" },
+      { "state": "Penang", "income_mean": 8267, "income_median": 6502, "poverty_absolute": 2, "poverty_hardcore": 0.1, "poverty_relative": 15.3, "region": "Peninsular" },
+      { "state": "Sabah", "income_mean": 6171, "income_median": 4577, "poverty_absolute": 19.7, "poverty_hardcore": 1.2, "poverty_relative": 14.5, "region": "East Malaysia" },
+      { "state": "Sarawak", "income_mean": 6457, "income_median": 4978, "poverty_absolute": 10.8, "poverty_hardcore": 0.4, "poverty_relative": 16.2, "region": "East Malaysia" },
+      { "state": "Selangor", "income_mean": 12233, "income_median": 9983, "poverty_absolute": 1.5, "poverty_hardcore": 0, "poverty_relative": 14.2, "region": "Peninsular" },
+      { "state": "Terengganu", "income_mean": 7248, "income_median": 5878, "poverty_absolute": 6.2, "poverty_hardcore": 0.2, "poverty_relative": 6.9, "region": "Peninsular" },
+      { "state": "Kuala Lumpur", "income_mean": 13325, "income_median": 10234, "poverty_absolute": 1.4, "poverty_hardcore": 0, "poverty_relative": 12.7, "region": "Peninsular" },
+      { "state": "Labuan", "income_mean": 8250, "income_median": 6904, "poverty_absolute": 2.5, "poverty_hardcore": 0, "poverty_relative": 7, "region": "East Malaysia" },
+      { "state": "Putrajaya", "income_mean": 13473, "income_median": 10056, "poverty_absolute": 0.1, "poverty_hardcore": 0, "poverty_relative": 11.4, "region": "Peninsular" }
+    ]
+  },
+  "data": { "name": "combinedData" },
+  "params": [ { "name": "stateFilter", "value": null } ],
+  "transform": [
+    { "fold": [ "income_median", "income_mean", "poverty_absolute", "poverty_hardcore", "poverty_relative" ], "as": [ "metricField", "metricValue" ] },
+    { "calculate": "datum.metricField === 'income_median' ? 'Median income (RM)' : datum.metricField === 'income_mean' ? 'Mean income (RM)' : datum.metricField === 'poverty_absolute' ? 'Absolute poverty (%)' : datum.metricField === 'poverty_hardcore' ? 'Hardcore poverty (%)' : 'Relative poverty (%)'", "as": "metricLabel" },
+    { "calculate": "datum.metricField === 'income_median' || datum.metricField === 'income_mean' ? format(datum.metricValue, ',.0f') : format(datum.metricValue, '.1f')", "as": "metricValueLabel" },
+    { "joinaggregate": [ { "op": "count", "field": "state", "as": "metricCount" } ], "groupby": [ "metricField" ] },
+    { "window": [ { "op": "rank", "as": "metricRankDesc" } ], "sort": [ { "field": "metricValue", "order": "descending" } ], "groupby": [ "metricField" ] },
+    { "calculate": "datum.metricRankDesc === 1 ? 'Highest Value State' : datum.metricRankDesc === datum.metricCount ? 'Lowest Value State' : 'Others State'", "as": "metricRankCategory" },
+    { "filter": "!stateFilter || datum.state === stateFilter" }
+  ],
+  "facet": {
+    "column": {
+      "field": "metricLabel",
+      "type": "nominal",
+      "sort": [ "Median income (RM)", "Mean income (RM)", "Absolute poverty (%)", "Hardcore poverty (%)", "Relative poverty (%)" ],
+      "title": null
+    },
+    "spacing": 20,
+    "align": { "column": "center" }
+  },
+  "spec": {
+    "width": 160,
+    "height": 320,
+    "mark": { "type": "bar" },
+    "encoding": {
+      "y": { "field": "state", "type": "ordinal", "sort": { "field": "income_median", "order": "descending" }, "title": "State" },
+      "x": { "field": "metricValue", "type": "quantitative", "title": "Metric Value" },
+      "color": {
+        "field": "metricRankCategory",
+        "type": "nominal",
+        "scale": { "domain": [ "Highest Value State", "Lowest Value State", "Others State" ], "range": [ "#1f77b4", "#d62728", "#bfbfbf" ] },
+        "legend": { "title": "State ranking", "orient": "bottom", "direction": "horizontal", "values": [ "Highest Value State", "Lowest Value State", "Others State" ], "labelExpr": "datum.label" }
+      },
+      "tooltip": [
+        { "field": "metricLabel", "type": "nominal", "title": "Metric" },
+        { "field": "state", "type": "nominal", "title": "State" },
+        { "field": "region", "type": "nominal", "title": "Region" },
+        { "field": "metricValueLabel", "type": "nominal", "title": "Value" }
+      ]
+    }
+  },
+  "resolve": { "scale": { "x": "independent" } }
+}
